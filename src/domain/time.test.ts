@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatDuration,
+  formatTimeLabel,
   formatHhMm,
   parseHhMm,
   spanMinutes,
@@ -38,6 +39,18 @@ describe('formatDuration', () => {
     expect(formatDuration(532)).toBe('8時間52分');
     expect(formatDuration(480)).toBe('8時間');
     expect(formatDuration(45)).toBe('45分');
+  });
+});
+
+describe('formatTimeLabel', () => {
+  it('先頭の 0 を落として表示する', () => {
+    expect(formatTimeLabel('08:00')).toBe('8:00');
+    expect(formatTimeLabel('16:52')).toBe('16:52');
+    expect(formatTimeLabel('00:30')).toBe('0:30');
+  });
+
+  it('未記録なら空文字', () => {
+    expect(formatTimeLabel(null)).toBe('');
   });
 });
 

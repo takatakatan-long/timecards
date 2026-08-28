@@ -19,6 +19,15 @@ export function formatHhMm(totalMinutes: number): HhMm {
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 }
 
+/**
+ * 画面に出す時刻。保存は 'HH:MM' の 0 埋めだが、表示は 8:00 のように先頭の 0 を落とす。
+ * 明細と画面の表記を仕様書の書き方に揃えるため。
+ */
+export function formatTimeLabel(value: HhMm | null | undefined): string {
+  if (!value) return '';
+  return value.replace(/^0/, '');
+}
+
 /** 分数を「8時間52分」形式にする */
 export function formatDuration(totalMinutes: number): string {
   const hours = Math.floor(totalMinutes / 60);
