@@ -9,3 +9,12 @@ Desktop.ini
 
 # Node.js の部品置き場（後の段階で使う。巨大なので送らない）
 node_modules/
+
+# ビルド生成物・ログ（Vite 雛形が追加）
+dist/
+dist-ssr/
+*.local
+logs/
+*.log
+npm-debug.log*
+.vite/
