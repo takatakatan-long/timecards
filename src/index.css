@@ -1,111 +1,132 @@
+/*
+ * 全体の土台。ここには「色・間隔・文字」といった全画面で共通の値だけを置く。
+ * 画面ごとの見た目は各コンポーネントの CSS に書く。
+ *
+ * 配色は設計方針の「案B 農園」に従う。
+ * 緑 = これから始める操作（出勤）、オレンジ = 進行中のもの（退勤・同期・警告）という
+ * 意味づけを持たせているので、色を選ぶときは意味の側から選ぶこと。
+ */
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  /* 地と面 */
+  --color-bg: #faf7f0; /* 生成り */
+  --color-surface: #ffffff; /* カード */
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  /* 文字 */
+  --color-text: #26231d;
+  --color-text-sub: #8a8172;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  /* 主色（緑）: これから始める操作 */
+  --color-primary: #2f6b3f;
+  --color-primary-dark: #24522f; /* 押下時 */
+  --color-primary-pale: #eaf3ea; /* チップ・記録済 */
+
+  /* 差し色（オレンジ）: 進行中・同期・警告 */
+  --color-accent: #c2683a;
+  --color-accent-dark: #a5552d;
+  --color-accent-pale: #fbeee2;
+
+  /* 罫線 */
+  --color-border: #d8cdb8;
+
+  /* 見出し帯。グラデーションはここだけに使う（面積の広い箇所に広げない） */
+  --gradient-header: linear-gradient(165deg, #377845 0%, #2a6038 100%);
+
+  /* 形状 */
+  --radius-card: 14px;
+  --radius-button: 12px;
+  --shadow-card: 0 2px 8px rgba(60, 48, 25, 0.07);
+
+  /* タップ領域。農作業中の操作を想定し、打刻ボタンは 50px を確保する */
+  --tap-min: 44px;
+  --tap-stamp: 50px;
+
+  /* 間隔 */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* 画面の最大幅。スマホ幅を基準にし、PC では広げる */
+  --content-max: 480px;
+  --content-max-wide: 960px;
+
+  font-family: 'Zen Maru Gothic', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+  line-height: 1.7;
+  color: var(--color-text);
+  background: var(--color-bg);
+
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  /* 打刻ボタンの連打で画面が拡大しないように */
+  -webkit-text-size-adjust: 100%;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+* {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh; /* スマホのアドレスバー分を差し引く */
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+h2,
+h3 {
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
 p {
   margin: 0;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+button {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 16px; /* iOS で入力欄にフォーカスすると拡大するのを防ぐ */
+  color: inherit;
+}
+
+/* キーボード操作のときだけ枠を出す。指で押したときには出さない */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* 端末側で動きを減らす設定にしている人には動かさない */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

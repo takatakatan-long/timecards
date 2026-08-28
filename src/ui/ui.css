@@ -1,0 +1,242 @@
+/*
+ * 全画面で使い回す部品の見た目。
+ * 色や角丸の実値は index.css の変数を参照し、ここには直接書かない。
+ */
+
+/* ------------------------------------------------------------ 画面の骨格 */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+/* 見出し帯。グラデーションを使うのはこの 1 箇所だけ */
+.app-header {
+  background: var(--gradient-header);
+  color: #ffffff;
+  padding: var(--space-4) var(--space-4) var(--space-5);
+  /* スマホのノッチ・ステータスバーの下に潜り込まないように */
+  padding-top: max(var(--space-4), env(safe-area-inset-top));
+}
+
+.app-header__inner {
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.app-header__title {
+  font-size: 20px;
+}
+
+/* 現在の期の名称。日常の画面は現在の期しか出さないので、常に見える位置に置く */
+.app-header__term {
+  margin-top: 2px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.app-main {
+  flex: 1;
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: var(--space-4);
+  /* スマホのホームバーに最下部のボタンが隠れないように */
+  padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* PC では画面幅を活かす。中身は同じで並べ方だけを変える */
+@media (min-width: 900px) {
+  .app-header__inner,
+  .app-main {
+    max-width: var(--content-max-wide);
+  }
+}
+
+/* ------------------------------------------------------------ カード */
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-4);
+}
+
+.card--flush {
+  padding: 0;
+  overflow: hidden;
+}
+
+.section-title {
+  font-size: 14px;
+  color: var(--color-text-sub);
+  margin-bottom: var(--space-2);
+}
+
+/* ------------------------------------------------------------ ボタン */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--tap-min);
+  padding: 0 var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-button);
+  background: var(--color-surface);
+  font-weight: 500;
+  transition: background-color 0.12s ease;
+}
+
+/* 打刻ボタンは大きめに取る */
+.btn--stamp {
+  min-height: var(--tap-stamp);
+  padding: 0 var(--space-5);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+/* 緑 = これから始める操作（出勤） */
+.btn--primary {
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+.btn--primary:active {
+  background: var(--color-primary-dark);
+}
+
+/* オレンジ = 進行中のもの（退勤・同期） */
+.btn--accent {
+  background: var(--color-accent);
+  color: #ffffff;
+}
+
+.btn--accent:active {
+  background: var(--color-accent-dark);
+}
+
+/* 枠線だけの控えめなボタン */
+.btn--quiet {
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+.btn--quiet:active {
+  background: var(--color-primary-pale);
+}
+
+.btn--block {
+  width: 100%;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ------------------------------------------------------------ チップ */
+
+/* 予定時刻など、補助的な値を囲って出す小さな札 */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  background: var(--color-primary-pale);
+  color: var(--color-primary);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.chip--accent {
+  background: var(--color-accent-pale);
+  color: var(--color-accent);
+}
+
+.chip--plain {
+  background: transparent;
+  border: 1px dashed var(--color-border);
+  color: var(--color-text-sub);
+}
+
+/* ------------------------------------------------------------ 行 */
+
+/* カード内に並べる 1 行。スタッフ行・導線メニューの共通の器 */
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  border: none;
+  text-align: left;
+}
+
+.row + .row {
+  border-top: 1px solid var(--color-border);
+}
+
+.row__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.row__title {
+  font-size: 16px;
+}
+
+.row__sub {
+  font-size: 13px;
+  color: var(--color-text-sub);
+}
+
+.row__icon {
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.row__chevron {
+  color: var(--color-text-sub);
+  flex-shrink: 0;
+}
+
+/* ------------------------------------------------------------ 注意書き */
+
+/* 打刻漏れなどの警告。色だけに頼らず必ずアイコンと文言を添える */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-card);
+  background: var(--color-accent-pale);
+  color: var(--color-accent-dark);
+  font-size: 14px;
+}
+
+.alert__icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* 何も無いときの案内 */
+.empty {
+  padding: var(--space-5) var(--space-4);
+  text-align: center;
+  color: var(--color-text-sub);
+  font-size: 14px;
+}
