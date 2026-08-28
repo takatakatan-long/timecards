@@ -1,0 +1,11 @@
+# 仕様書・作業メモ（手元にのみ置き、GitHub へは送らない）
+CLAUDE.md
+.claude/
+
+# OS が勝手に作る不要ファイル
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Node.js の部品置き場（後の段階で使う。巨大なので送らない）
+node_modules/
