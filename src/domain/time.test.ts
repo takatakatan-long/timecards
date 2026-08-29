@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  calendarGrid,
+  dateRange,
+  daysBetween,
   formatDuration,
   formatTimeLabel,
   formatHhMm,
@@ -89,5 +92,44 @@ describe('yearMonthRange', () => {
 
   it('yearMonthOf と組み合わせて読み込むファイルを決める', () => {
     expect(yearMonthOf('2026-08-03')).toBe('2026-08');
+  });
+});
+
+describe('daysBetween / dateRange', () => {
+  it('日数の差を返す', () => {
+    expect(daysBetween('2026-08-24', '2026-08-31')).toBe(7);
+    expect(daysBetween('2026-08-31', '2026-08-24')).toBe(-7);
+    expect(daysBetween('2026-08-24', '2026-08-24')).toBe(0);
+  });
+
+  it('月をまたいでも数えられる', () => {
+    expect(daysBetween('2026-08-30', '2026-09-02')).toBe(3);
+  });
+
+  it('両端を含めて日付を並べる', () => {
+    expect(dateRange('2026-08-30', '2026-09-01')).toEqual([
+      '2026-08-30',
+      '2026-08-31',
+      '2026-09-01',
+    ]);
+  });
+});
+
+describe('calendarGrid', () => {
+  it('日曜始まりで、月初までの升目を空ける', () => {
+    // 2026-09-01 は火曜日なので、日・月の 2 升が空く
+    const cells = calendarGrid('2026-09');
+    expect(cells.slice(0, 3)).toEqual([null, null, '2026-09-01']);
+  });
+
+  it('7 の倍数の升目になる', () => {
+    expect(calendarGrid('2026-09').length % 7).toBe(0);
+    expect(calendarGrid('2026-02').length % 7).toBe(0);
+  });
+
+  it('その月の日をすべて含む', () => {
+    const days = calendarGrid('2026-08').filter((cell) => cell !== null);
+    expect(days).toHaveLength(31);
+    expect(days.at(-1)).toBe('2026-08-31');
   });
 });

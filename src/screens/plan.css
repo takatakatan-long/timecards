@@ -1,0 +1,139 @@
+/*
+ * 出勤予定画面。
+ * スマホは日付順のリスト、PC は月カレンダー。
+ * 同じデータを両方書き出しておき、幅に応じて片方だけを見せる。
+ */
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.month-nav__label {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.plan-day + .plan-day {
+  margin-top: var(--space-3);
+}
+
+/* 日付の見出し。予定のある日だけが並ぶ */
+.plan-day__head {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-primary-pale);
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* 状態の色分け。色だけに頼らず必ず文言を添える */
+.chip--planned {
+  background: var(--color-primary-pale);
+  color: var(--color-primary);
+}
+
+.chip--fixed {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-sub);
+}
+
+.chip--missed {
+  background: var(--color-accent-pale);
+  color: var(--color-accent-dark);
+}
+
+.plan-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* ------------------------------------------------------------ カレンダー */
+
+/* 既定（スマホ）ではカレンダーを出さない */
+.plan-calendar {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .plan-list {
+    display: none;
+  }
+
+  .plan-calendar {
+    display: block;
+  }
+
+  .plan-actions {
+    flex-direction: row;
+  }
+}
+
+.plan-calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--color-border);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-button);
+  overflow: hidden;
+}
+
+.plan-calendar__weekday {
+  padding: var(--space-2);
+  background: var(--color-surface);
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-sub);
+}
+
+.plan-calendar__cell {
+  min-height: 92px;
+  padding: var(--space-2);
+  background: var(--color-surface);
+}
+
+.plan-calendar__cell.is-blank {
+  background: var(--color-bg);
+}
+
+.plan-calendar__cell.is-today {
+  box-shadow: inset 0 0 0 2px var(--color-primary);
+}
+
+.plan-calendar__date {
+  font-size: 13px;
+  color: var(--color-text-sub);
+  margin-bottom: var(--space-1);
+}
+
+.plan-calendar__entry {
+  display: block;
+  width: 100%;
+  margin-bottom: 2px;
+  padding: 2px var(--space-2);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: var(--color-primary-pale);
+  color: var(--color-primary);
+  font-size: 12px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plan-calendar__entry.is-fixed {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text-sub);
+}
+
+.plan-calendar__entry.is-missed {
+  background: var(--color-accent-pale);
+  color: var(--color-accent-dark);
+}

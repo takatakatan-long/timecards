@@ -94,3 +94,78 @@ export function yearMonthRange(from: IsoDate, to: IsoDate): YearMonth[] {
   }
   return result;
 }
+
+/** 曜日の表示。日曜始まりで並べる */
+export const WEEKDAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'] as const;
+
+/** 'YYYY-MM' を「2026年8月」にする */
+export function formatMonthLabel(month: YearMonth): string {
+  const [year, monthPart] = month.split('-');
+  return `${Number(year)}年${Number(monthPart)}月`;
+}
+
+/** 'YYYY-MM-DD' を「8月3日（月）」にする */
+export function formatDateLabel(date: IsoDate): string {
+  const [, month, day] = date.split('-');
+  return `${Number(month)}月${Number(day)}日（${WEEKDAY_LABELS[weekdayOf(date)]}）`;
+}
+
+/** 曜日番号（0 = 日曜）。文字列から Date を作る箇所をここに閉じ込める */
+export function weekdayOf(date: IsoDate): number {
+  return new Date(`${date}T00:00:00`).getDay();
+}
+
+/** その月の最初と最後の日。月別の読み込み範囲に使う */
+export function monthBounds(month: YearMonth): { from: IsoDate; to: IsoDate } {
+  const year = Number(month.slice(0, 4));
+  const monthNumber = Number(month.slice(5, 7));
+  const lastDay = new Date(year, monthNumber, 0).getDate();
+  return {
+    from: `${month}-01`,
+    to: `${month}-${String(lastDay).padStart(2, '0')}`,
+  };
+}
+
+/** 月送り。delta に -1 / +1 を渡す */
+export function shiftMonth(month: YearMonth, delta: number): YearMonth {
+  const year = Number(month.slice(0, 4));
+  const monthNumber = Number(month.slice(5, 7));
+  const shifted = new Date(year, monthNumber - 1 + delta, 1);
+  return `${shifted.getFullYear()}-${String(shifted.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/** 日付をずらす。予定のコピーで使う */
+export function addDays(date: IsoDate, days: number): IsoDate {
+  const shifted = new Date(`${date}T00:00:00`);
+  shifted.setDate(shifted.getDate() + days);
+  return toIsoDate(shifted);
+}
+
+/** from から to までの日数。予定のコピーでずらす量の計算に使う */
+export function daysBetween(from: IsoDate, to: IsoDate): number {
+  const fromTime = new Date(`${from}T00:00:00`).getTime();
+  const toTime = new Date(`${to}T00:00:00`).getTime();
+  return Math.round((toTime - fromTime) / 86_400_000);
+}
+
+/** from から to までの日付を昇順で列挙する。両端を含む */
+export function dateRange(from: IsoDate, to: IsoDate): IsoDate[] {
+  const days = daysBetween(from, to);
+  if (days < 0) return [];
+  return Array.from({ length: days + 1 }, (_, index) => addDays(from, index));
+}
+
+/**
+ * 月カレンダーの升目。日曜始まりで、前後の月にはみ出した分は null にする。
+ * PC 表示のカレンダーで使う。予定は日付で管理しており、週は日付を見やすく並べるための枠でしかない。
+ */
+export function calendarGrid(month: YearMonth): (IsoDate | null)[] {
+  const { from, to } = monthBounds(month);
+  const lastDay = Number(to.slice(8, 10));
+  const cells: (IsoDate | null)[] = new Array(weekdayOf(from)).fill(null);
+  for (let day = 1; day <= lastDay; day += 1) {
+    cells.push(`${month}-${String(day).padStart(2, '0')}`);
+  }
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
+}

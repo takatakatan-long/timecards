@@ -265,7 +265,7 @@ export async function revertToPlan(recordId: string): Promise<AttendanceRecord> 
   return updateRecord(recordId, { kind: 'plan', endTime: null, hourlyWage: null });
 }
 
-/** 前週分の複製など、予定をまとめてコピーする */
+/** 予定をまとめてコピーする。shiftDays の分だけ日付をずらす */
 export async function copyPlans(
   sourceRecords: AttendanceRecord[],
   shiftDays: number,

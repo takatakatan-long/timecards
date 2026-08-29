@@ -14,11 +14,11 @@ import {
   workPlaceSuggestions,
 } from '../data/repository';
 import { rowStatusOf } from '../domain/status';
-import { formatTimeLabel, toHhMm } from '../domain/time';
+import { formatDateLabel, formatTimeLabel, toHhMm } from '../domain/time';
 import type { AttendanceRecord, Staff } from '../domain/types';
 
 interface HomeScreenProps {
-  onNavigate: (screen: 'settings') => void;
+  onNavigate: (screen: 'plans' | 'settings') => void;
 }
 
 /** ダイアログで編集中の対象。record が null なら予定の無い日の新規打刻 */
@@ -28,14 +28,6 @@ interface EditTarget {
   record: AttendanceRecord | null;
   initial: RecordDialogValues;
   canRevert: boolean;
-}
-
-function formatToday(date: string): string {
-  const [, month, day] = date.split('-');
-  const weekday = ['日', '月', '火', '水', '木', '金', '土'][
-    new Date(`${date}T00:00:00`).getDay()
-  ];
-  return `${Number(month)}月${Number(day)}日（${weekday}）`;
 }
 
 export function HomeScreen({ onNavigate }: HomeScreenProps) {
@@ -192,7 +184,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             打刻漏れが {data.unresolved.length} 件あります（
             {data.unresolved
               .slice(0, 3)
-              .map((record) => formatToday(record.date))
+              .map((record) => formatDateLabel(record.date))
               .join('・')}
             {data.unresolved.length > 3 ? ' ほか' : ''}）
           </div>
@@ -201,7 +193,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
 
       {data.term && data.staff.length > 0 ? (
         <section>
-          <div className="section-title">本日 {formatToday(data.todayDate)}</div>
+          <div className="section-title">本日 {formatDateLabel(data.todayDate)}</div>
           <div className="card card--flush">
             {data.staff.map((staff) => {
               const record = data.todayRecords.get(staff.id);
@@ -267,6 +259,14 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
       <section>
         <div className="section-title">メニュー</div>
         <div className="card card--flush">
+          <button type="button" className="row" onClick={() => onNavigate('plans')}>
+            <Icon name="calendar" size={22} className="row__icon" />
+            <div className="row__body">
+              <div className="row__title">出勤予定</div>
+              <div className="row__sub">出勤日と出勤時刻の登録</div>
+            </div>
+            <Icon name="chevron-right" size={20} className="row__chevron" />
+          </button>
           <button type="button" className="row" onClick={() => onNavigate('settings')}>
             <Icon name="settings" size={22} className="row__icon" />
             <div className="row__body">
