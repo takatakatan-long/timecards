@@ -3,14 +3,19 @@ import { AppShell } from '../ui/AppShell';
 import { Icon } from '../ui/Icon';
 import { Modal } from '../ui/Modal';
 import {
+  closeTerm,
   createStaff,
   createTerm,
   currentTerm,
+  listRecordsByTerm,
   listStaff,
   loadConfig,
   patchConfig,
   updateStaff,
 } from '../data/repository';
+import { unresolvedRecords } from '../domain/status';
+import { DataSection } from './settings/DataSection';
+import { WageSection } from './settings/WageSection';
 import { today } from '../domain/time';
 import {
   connect as connectDrive,
@@ -18,6 +23,7 @@ import {
   isConfigured as isDriveConfigured,
   resolveDriveStatus,
 } from '../data/drive/service';
+import { DEFAULT_CONFIG } from '../domain/types';
 import type { Config, DriveStatus, Staff, Term } from '../domain/types';
 
 interface SettingsScreenProps {
@@ -33,6 +39,8 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [businessName, setBusinessName] = useState('');
   const [savedName, setSavedName] = useState('');
+  const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
+  const [closeOpen, setCloseOpen] = useState(false);
   const [drive, setDrive] = useState<{ status: DriveStatus; accountName: string | null; folderName: string | null } | null>(null);
   const [driveBusy, setDriveBusy] = useState(false);
   const [driveMessage, setDriveMessage] = useState<string | null>(null);
@@ -41,6 +49,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
 
   const reload = useCallback(async () => {
     const config: Config = await loadConfig();
+    setConfig(config);
     setTerm(await currentTerm());
     setStaff(await listStaff(true));
     setBusinessName(config.businessName);
@@ -86,8 +95,19 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
           >
             新しい期を作成
           </button>
+          {term && !term.closedDate ? (
+            <button
+              type="button"
+              className="btn btn--quiet btn--block"
+              style={{ marginTop: 'var(--space-2)' }}
+              onClick={() => setCloseOpen(true)}
+            >
+              期を締める
+            </button>
+          ) : null}
           <p className="note">
             期を変えると、以後の記録は新しい期に属します。過去の期は削除されず、いつでも明細を出し直せます。
+            締めたあとでも記録は修正できます（後から誤りが見つかることがあるため、締めても鍵はかけません）。
           </p>
         </div>
       </section>
@@ -162,6 +182,8 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
           </p>
         </div>
       </section>
+
+      <WageSection rule={config.rounding} onSaved={() => void reload()} />
 
       {isDriveConfigured() ? (
         <section>
@@ -240,6 +262,19 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
             </p>
           </div>
         </section>
+      ) : null}
+
+      <DataSection onRestored={() => void reload()} />
+
+      {closeOpen && term ? (
+        <CloseTermDialog
+          term={term}
+          onClose={() => setCloseOpen(false)}
+          onClosed={async () => {
+            setCloseOpen(false);
+            await reload();
+          }}
+        />
       ) : null}
 
       {termDialogOpen ? (
@@ -384,6 +419,78 @@ function StaffDialog({
           onClick={() => void save()}
         >
           保存
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+/**
+ * 期を締める。
+ * 打刻漏れが残っていたら警告するが、止めはしない
+ * （埋められない記録漏れがあっても締められるようにするため。明細出力と同じ扱い）。
+ */
+function CloseTermDialog({
+  term,
+  onClose,
+  onClosed,
+}: {
+  term: Term;
+  onClose: () => void;
+  onClosed: () => void;
+}) {
+  const todayDate = today();
+  const [closedDate, setClosedDate] = useState(todayDate);
+  const [unresolved, setUnresolved] = useState<number | null>(null);
+
+  useEffect(() => {
+    void (async () => {
+      const records = await listRecordsByTerm(term.id);
+      // oxlint-disable-next-line react/set-state-in-effect
+      setUnresolved(unresolvedRecords(records, todayDate).length);
+    })();
+  }, [term.id, todayDate]);
+
+  return (
+    <Modal title="期を締める" onClose={onClose}>
+      <p className="modal__subject">{term.name}</p>
+
+      {unresolved !== null && unresolved > 0 ? (
+        <div className="alert" style={{ marginBottom: 'var(--space-3)' }}>
+          <Icon name="alert" size={20} className="alert__icon" />
+          <div>
+            打刻漏れが {unresolved} 件残っています。この分は集計と明細に入りません。
+            このまま締めることもできます。
+          </div>
+        </div>
+      ) : null}
+
+      <label className="field">
+        <span className="field__label">締め日</span>
+        <input
+          type="date"
+          className="field__input"
+          value={closedDate}
+          onChange={(event) => setClosedDate(event.target.value)}
+        />
+      </label>
+
+      <p className="note">
+        締めても記録は修正でき、明細も出し直せます。日常の画面に別の期を出すには、
+        あらためて「新しい期を作成」してください。
+      </p>
+
+      <div className="modal__actions">
+        <button type="button" className="btn btn--quiet" onClick={onClose}>
+          やめる
+        </button>
+        <button
+          type="button"
+          className="btn btn--primary"
+          disabled={!closedDate}
+          onClick={() => void closeTerm(term.id, closedDate).then(onClosed)}
+        >
+          締める
         </button>
       </div>
     </Modal>
