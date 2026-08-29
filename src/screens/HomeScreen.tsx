@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppShell } from '../ui/AppShell';
 import { Icon } from '../ui/Icon';
 import { Toast } from '../ui/Toast';
+import { SyncCard } from '../ui/SyncCard';
 import { RecordDialog } from '../ui/RecordDialog';
 import type { RecordDialogValues } from '../ui/RecordDialog';
 import { useHomeData } from '../app/useHomeData';
@@ -189,6 +190,11 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           </button>
         </section>
       ) : null}
+
+      <SyncCard
+        onSynced={() => void refresh()}
+        onOpenSettings={() => onNavigate({ name: 'settings' })}
+      />
 
       {data.unresolved.length > 0 ? (
         <div className="alert">

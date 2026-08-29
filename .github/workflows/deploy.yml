@@ -37,6 +37,13 @@ jobs:
       - run: npm run lint
       - run: npm run test
       - run: npm run build
+        env:
+          # Google Drive 同期に使う OAuth クライアント ID。
+          # リポジトリの Settings → Secrets and variables → Actions → Variables に
+          # VITE_GOOGLE_CLIENT_ID として登録する。
+          # 秘密の値ではない（ブラウザに配られる前提の識別子）ので Variables でよい。
+          # 未設定でもビルドは通り、その場合は同期機能そのものを画面に出さない。
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID }}
 
       - uses: actions/upload-pages-artifact@v3
         with:

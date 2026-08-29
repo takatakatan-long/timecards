@@ -12,7 +12,13 @@ import {
   updateStaff,
 } from '../data/repository';
 import { today } from '../domain/time';
-import type { Config, Staff, Term } from '../domain/types';
+import {
+  connect as connectDrive,
+  disconnect as disconnectDrive,
+  isConfigured as isDriveConfigured,
+  resolveDriveStatus,
+} from '../data/drive/service';
+import type { Config, DriveStatus, Staff, Term } from '../domain/types';
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -27,6 +33,9 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [businessName, setBusinessName] = useState('');
   const [savedName, setSavedName] = useState('');
+  const [drive, setDrive] = useState<{ status: DriveStatus; accountName: string | null; folderName: string | null } | null>(null);
+  const [driveBusy, setDriveBusy] = useState(false);
+  const [driveMessage, setDriveMessage] = useState<string | null>(null);
   const [termDialogOpen, setTermDialogOpen] = useState(false);
   const [staffDialog, setStaffDialog] = useState<Staff | 'new' | null>(null);
 
@@ -36,6 +45,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
     setStaff(await listStaff(true));
     setBusinessName(config.businessName);
     setSavedName(config.businessName);
+    setDrive({ ...config.drive, status: resolveDriveStatus(config) });
   }, []);
 
   useEffect(() => {
@@ -152,6 +162,85 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
           </p>
         </div>
       </section>
+
+      {isDriveConfigured() ? (
+        <section>
+          <div className="section-title">Google Drive</div>
+          <div className="card">
+            {drive?.status === 'connected' ? (
+              <>
+                <div className="row__title">接続中</div>
+                <div className="row__sub">
+                  {drive.accountName ?? 'Google アカウント'}
+                  {drive.folderName ? ` ／ 保存先 ${drive.folderName}` : ''}
+                </div>
+                <button
+                  type="button"
+                  className="btn btn--quiet btn--block"
+                  style={{ marginTop: 'var(--space-3)' }}
+                  disabled={driveBusy}
+                  onClick={() =>
+                    void (async () => {
+                      setDriveBusy(true);
+                      try {
+                        await disconnectDrive();
+                        setDriveMessage('接続を解除しました');
+                        await reload();
+                      } finally {
+                        setDriveBusy(false);
+                      }
+                    })()
+                  }
+                >
+                  接続を解除
+                </button>
+              </>
+            ) : null}
+
+            {drive?.status === 'reauth' ? (
+              <div className="alert" style={{ marginBottom: 'var(--space-3)' }}>
+                <Icon name="alert" size={20} className="alert__icon" />
+                <div>
+                  接続が切れています。この状態では同期されません。接続し直してください。
+                </div>
+              </div>
+            ) : null}
+
+            {drive?.status !== 'connected' ? (
+              <button
+                type="button"
+                className="btn btn--primary btn--block"
+                disabled={driveBusy}
+                onClick={() =>
+                  void (async () => {
+                    setDriveBusy(true);
+                    setDriveMessage(null);
+                    try {
+                      await connectDrive();
+                      setDriveMessage('接続しました');
+                      await reload();
+                    } catch (cause) {
+                      setDriveMessage(
+                        cause instanceof Error ? cause.message : '接続できませんでした',
+                      );
+                    } finally {
+                      setDriveBusy(false);
+                    }
+                  })()
+                }
+              >
+                {drive?.status === 'reauth' ? '接続し直す' : 'Googleアカウントに接続'}
+              </button>
+            ) : null}
+
+            {driveMessage ? <p className="note">{driveMessage}</p> : null}
+            <p className="note">
+              同期は自動では行いません。ホームの「同期」を押したときだけ、Drive とやり取りします。
+              このアプリが読み書きできるのは、Drive の中でもこのアプリが作ったファイルだけです。
+            </p>
+          </div>
+        </section>
+      ) : null}
 
       {termDialogOpen ? (
         <TermDialog

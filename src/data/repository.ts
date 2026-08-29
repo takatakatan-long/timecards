@@ -17,7 +17,7 @@ import {
 import { newId, nowStamp } from './id';
 import { toHhMm, toIsoDate, yearMonthOf } from '../domain/time';
 import { resolveClockInTime } from '../domain/status';
-import { DEFAULT_CONFIG } from '../domain/types';
+import { DEFAULT_CONFIG, SHARED_CONFIG_KEYS } from '../domain/types';
 import type { AttendanceRecord, Config, HhMm, IsoDate, Staff, Term } from '../domain/types';
 
 // ---------------------------------------------------------------- config
@@ -38,7 +38,15 @@ export async function saveConfig(config: Config): Promise<void> {
 }
 
 export async function patchConfig(patch: Partial<Config>): Promise<Config> {
-  const next = { ...(await loadConfig()), ...patch };
+  const current = await loadConfig();
+  // 端末ごとの値（接続状態・最終同期日時）だけを触った場合は更新時刻を進めない。
+  // 進めてしまうと、中身が変わっていないのに同期で相手の設定を上書きしてしまうため。
+  const touchesShared = SHARED_CONFIG_KEYS.some((key) => key in patch);
+  const next: Config = {
+    ...current,
+    ...patch,
+    updatedAt: touchesShared ? nowStamp() : current.updatedAt,
+  };
   await saveConfig(next);
   return next;
 }

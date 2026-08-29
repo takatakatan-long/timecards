@@ -21,3 +21,8 @@ npm-debug.log*
 
 # PWA プラグインが開発時に作る一時ファイル
 dev-dist/
+
+# 手元だけの設定（Google のクライアント ID など）
+.env
+.env.*
+!.env.example

@@ -101,12 +101,23 @@ export interface Config {
    * 未入力なら明細に欄ごと出さない。ソースコードには一切埋め込まない。
    */
   businessName: string;
+  /**
+   * 端末をまたいで共有する設定の更新時刻。
+   * 同期では新しい側を採用する。drive と lastSyncedAt は端末ごとの値なので対象外。
+   */
+  updatedAt: IsoDateTime;
+  /** 接続状態。端末ごとに異なるので同期しない */
   drive: DriveSettings;
+  /** 最終同期日時。端末ごとに異なるので同期しない */
   lastSyncedAt: IsoDateTime | null;
 }
 
+/** 端末をまたいで共有する設定の項目。同期の対象はこれだけ */
+export const SHARED_CONFIG_KEYS = ['currentTermId', 'rounding', 'businessName'] as const;
+
 export const DEFAULT_CONFIG: Config = {
   currentTermId: null,
+  updatedAt: '1970-01-01T00:00:00.000Z',
   rounding: { unitMinutes: 15, direction: 'floor', target: 'dailyTotal' },
   businessName: '',
   drive: { status: 'disconnected', accountName: null, folderName: null },
