@@ -18,7 +18,7 @@ import { formatDateLabel, formatTimeLabel, toHhMm } from '../domain/time';
 import type { AttendanceRecord, Staff } from '../domain/types';
 
 interface HomeScreenProps {
-  onNavigate: (screen: 'plans' | 'settings') => void;
+  onNavigate: (screen: 'records' | 'plans' | 'settings') => void;
 }
 
 /** ダイアログで編集中の対象。record が null なら予定の無い日の新規打刻 */
@@ -259,6 +259,14 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
       <section>
         <div className="section-title">メニュー</div>
         <div className="card card--flush">
+          <button type="button" className="row" onClick={() => onNavigate('records')}>
+            <Icon name="list" size={22} className="row__icon" />
+            <div className="row__body">
+              <div className="row__title">出勤一覧表</div>
+              <div className="row__sub">過去の記録の確認と修正・人件費の集計</div>
+            </div>
+            <Icon name="chevron-right" size={20} className="row__chevron" />
+          </button>
           <button type="button" className="row" onClick={() => onNavigate('plans')}>
             <Icon name="calendar" size={22} className="row__icon" />
             <div className="row__body">

@@ -1,0 +1,96 @@
+/* 出勤一覧表。絞り込み・人件費サマリー・記録の一覧 */
+
+.filters .field:last-of-type {
+  margin-bottom: 0;
+}
+
+/* PC では絞り込みを横に並べる */
+@media (min-width: 700px) {
+  .filters {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-3);
+  }
+
+  .filters .field {
+    flex: 1;
+    margin-bottom: 0;
+  }
+}
+
+.summary__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0;
+}
+
+.summary__grid dt {
+  font-size: 12px;
+  color: var(--color-text-sub);
+}
+
+.summary__grid dd {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.summary__amount {
+  color: var(--color-primary);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* 打刻漏れの行。色に加えて左の帯と警告アイコンで示す */
+.record-row.is-unresolved {
+  background: var(--color-accent-pale);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.record-row__warn {
+  color: var(--color-accent);
+  vertical-align: -3px;
+  margin-right: var(--space-1);
+}
+
+.record-row__figures {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.record-row__hours {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.record-row__wage {
+  font-size: 12px;
+  color: var(--color-text-sub);
+}
+
+/* 修正画面に出す丸め前後の内訳 */
+.rounding-note {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-button);
+  background: var(--color-bg);
+  font-size: 13px;
+}
+
+.rounding-note > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.rounding-note > div + div {
+  margin-top: var(--space-1);
+}
+
+.rounding-note > div:last-child {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  font-weight: 500;
+}

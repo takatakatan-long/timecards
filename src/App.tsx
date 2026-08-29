@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { HomeScreen } from './screens/HomeScreen';
 import { PlanScreen } from './screens/PlanScreen';
+import { RecordListScreen } from './screens/RecordListScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 
-type Screen = 'home' | 'plans' | 'settings';
+type Screen = 'home' | 'records' | 'plans' | 'settings';
 
 /**
  * 画面の切り替え。
@@ -14,6 +15,9 @@ function App() {
 
   if (screen === 'settings') {
     return <SettingsScreen onBack={() => setScreen('home')} />;
+  }
+  if (screen === 'records') {
+    return <RecordListScreen onBack={() => setScreen('home')} />;
   }
   if (screen === 'plans') {
     return <PlanScreen onBack={() => setScreen('home')} />;

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import { Modal } from './Modal';
 import type { HhMm } from '../domain/types';
 
@@ -15,8 +16,15 @@ interface RecordDialogProps {
   /** 作業場所の入力補完。過去の入力履歴から渡す */
   suggestions: string[];
   onSubmit: (values: RecordDialogValues) => void;
-  /** 打刻を取り消して予定の状態に戻す。予定が無かった記録では渡さない */
+  /**
+   * 入力欄の下に出す補足。出勤一覧表からは丸め前後の労働時間と金額を渡し、
+   * 金額の根拠を説明できる状態にする。
+   */
+  info?: ReactNode;
+  /** 打刻を取り消す・記録を削除するなど、破棄側の操作。渡さなければボタンを出さない */
   onRevert?: () => void;
+  /** 破棄側のボタンの文言。画面によって意味が違うので必ず実際の動作に合わせる */
+  revertLabel?: string;
   onClose: () => void;
 }
 
@@ -30,8 +38,10 @@ export function RecordDialog({
   staffName,
   initial,
   suggestions,
+  info,
   onSubmit,
   onRevert,
+  revertLabel = '打刻を取り消して予定に戻す',
   onClose,
 }: RecordDialogProps) {
   const [startTime, setStartTime] = useState(initial.startTime);
@@ -82,6 +92,8 @@ export function RecordDialog({
         ))}
       </datalist>
 
+      {info}
+
       <div className="modal__actions">
         <button type="button" className="btn btn--quiet" onClick={onClose}>
           キャンセル
@@ -100,7 +112,7 @@ export function RecordDialog({
 
       {onRevert ? (
         <button type="button" className="modal__revert" onClick={onRevert}>
-          打刻を取り消して予定に戻す
+          {revertLabel}
         </button>
       ) : null}
     </Modal>
