@@ -16,9 +16,10 @@ import {
 import { rowStatusOf } from '../domain/status';
 import { formatDateLabel, formatTimeLabel, toHhMm } from '../domain/time';
 import type { AttendanceRecord, Staff } from '../domain/types';
+import type { Screen } from '../App';
 
 interface HomeScreenProps {
-  onNavigate: (screen: 'records' | 'plans' | 'settings') => void;
+  onNavigate: (screen: Screen) => void;
 }
 
 /** ダイアログで編集中の対象。record が null なら予定の無い日の新規打刻 */
@@ -155,7 +156,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             type="button"
             className="btn btn--primary btn--block"
             style={{ marginTop: 'var(--space-3)' }}
-            onClick={() => onNavigate('settings')}
+            onClick={() => onNavigate({ name: 'settings' })}
           >
             設定を開く
           </button>
@@ -170,7 +171,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             type="button"
             className="btn btn--primary btn--block"
             style={{ marginTop: 'var(--space-3)' }}
-            onClick={() => onNavigate('settings')}
+            onClick={() => onNavigate({ name: 'settings' })}
           >
             設定を開く
           </button>
@@ -259,7 +260,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
       <section>
         <div className="section-title">メニュー</div>
         <div className="card card--flush">
-          <button type="button" className="row" onClick={() => onNavigate('records')}>
+          <button type="button" className="row" onClick={() => onNavigate({ name: 'records' })}>
             <Icon name="list" size={22} className="row__icon" />
             <div className="row__body">
               <div className="row__title">出勤一覧表</div>
@@ -267,7 +268,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             </div>
             <Icon name="chevron-right" size={20} className="row__chevron" />
           </button>
-          <button type="button" className="row" onClick={() => onNavigate('plans')}>
+          <button type="button" className="row" onClick={() => onNavigate({ name: 'plans' })}>
             <Icon name="calendar" size={22} className="row__icon" />
             <div className="row__body">
               <div className="row__title">出勤予定</div>
@@ -275,7 +276,22 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
             </div>
             <Icon name="chevron-right" size={20} className="row__chevron" />
           </button>
-          <button type="button" className="row" onClick={() => onNavigate('settings')}>
+          <button
+            type="button"
+            className="row"
+            disabled={!data.term}
+            onClick={() =>
+              data.term && onNavigate({ name: 'print', termId: data.term.id, staffId: 'all' })
+            }
+          >
+            <Icon name="printer" size={22} className="row__icon" />
+            <div className="row__body">
+              <div className="row__title">明細出力</div>
+              <div className="row__sub">現在の期・全員分を印刷</div>
+            </div>
+            <Icon name="chevron-right" size={20} className="row__chevron" />
+          </button>
+          <button type="button" className="row" onClick={() => onNavigate({ name: 'settings' })}>
             <Icon name="settings" size={22} className="row__icon" />
             <div className="row__body">
               <div className="row__title">設定</div>

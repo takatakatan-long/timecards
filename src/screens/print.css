@@ -1,0 +1,142 @@
+/*
+ * 明細の印刷レイアウト。
+ * モノクロ印刷が前提なので、色に意味を持たせず、罫線と余白で構造を示す。
+ * 画面表示がそのままプレビューを兼ねる。
+ */
+
+.print-screen {
+  min-height: 100dvh;
+  background: var(--color-bg);
+  padding-bottom: var(--space-6);
+}
+
+.print-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  padding-top: max(var(--space-3), env(safe-area-inset-top));
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.print-toolbar__title {
+  flex: 1;
+  font-size: 14px;
+  color: var(--color-text-sub);
+  text-align: center;
+}
+
+/* 1 名 1 ページ。画面上では紙 1 枚を模した白い面として見せる */
+.print-page {
+  max-width: 190mm;
+  margin: var(--space-4) auto;
+  padding: var(--space-5);
+  background: #ffffff;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  color: #000000;
+}
+
+.print-page__title {
+  font-size: 18px;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid #000000;
+}
+
+.print-header {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--space-5);
+  font-size: 14px;
+}
+
+.print-header th,
+.print-header td {
+  padding: 4px 8px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid #999999;
+}
+
+.print-header th {
+  width: 6em;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* 時給 × 労働時間 = 支給額 を紙の上で検算できるよう、支給額だけ大きく出す */
+.print-header__amount {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.print-lines {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.print-lines th,
+.print-lines td {
+  padding: 5px 8px;
+  border: 1px solid #999999;
+  text-align: left;
+}
+
+.print-lines thead th {
+  background: #eeeeee;
+  font-weight: 500;
+}
+
+.print-lines .is-number {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------ 印刷時 */
+
+@media print {
+  /* 画面用の装飾を落とし、紙の余白に任せる */
+  .print-toolbar {
+    display: none;
+  }
+
+  .print-screen {
+    background: #ffffff;
+    padding: 0;
+  }
+
+  .print-page {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    /* 1 名 1 ページで改ページする */
+    break-after: page;
+  }
+
+  .print-page:last-child {
+    break-after: auto;
+  }
+
+  /* 明細が長いとき、行の途中で切れないようにする */
+  .print-lines tr {
+    break-inside: avoid;
+  }
+
+  .print-lines thead {
+    display: table-header-group;
+  }
+}
+
+@page {
+  size: A4;
+  margin: 15mm;
+}

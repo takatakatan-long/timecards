@@ -7,10 +7,12 @@ import {
   createTerm,
   currentTerm,
   listStaff,
+  loadConfig,
+  patchConfig,
   updateStaff,
 } from '../data/repository';
 import { today } from '../domain/time';
-import type { Staff, Term } from '../domain/types';
+import type { Config, Staff, Term } from '../domain/types';
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -23,12 +25,17 @@ interface SettingsScreenProps {
 export function SettingsScreen({ onBack }: SettingsScreenProps) {
   const [term, setTerm] = useState<Term | undefined>(undefined);
   const [staff, setStaff] = useState<Staff[]>([]);
+  const [businessName, setBusinessName] = useState('');
+  const [savedName, setSavedName] = useState('');
   const [termDialogOpen, setTermDialogOpen] = useState(false);
   const [staffDialog, setStaffDialog] = useState<Staff | 'new' | null>(null);
 
   const reload = useCallback(async () => {
+    const config: Config = await loadConfig();
     setTerm(await currentTerm());
     setStaff(await listStaff(true));
+    setBusinessName(config.businessName);
+    setSavedName(config.businessName);
   }, []);
 
   useEffect(() => {
@@ -111,6 +118,39 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
         <p className="note">
           時給の改定は過去の記録に遡りません。記録には打刻した時点の時給が保存されます。
         </p>
+      </section>
+
+      <section>
+        <div className="section-title">事業者</div>
+        <div className="card">
+          <label className="field">
+            <span className="field__label">事業者名</span>
+            <input
+              type="text"
+              className="field__input"
+              value={businessName}
+              placeholder="未入力"
+              onChange={(event) => setBusinessName(event.target.value)}
+            />
+          </label>
+          <button
+            type="button"
+            className="btn btn--primary btn--block"
+            disabled={businessName === savedName}
+            onClick={() =>
+              void patchConfig({ businessName: businessName.trim() }).then((next) => {
+                setBusinessName(next.businessName);
+                setSavedName(next.businessName);
+              })
+            }
+          >
+            保存
+          </button>
+          <p className="note">
+            明細のヘッダーに印字します。未入力のままなら、明細にその欄を出しません。
+            この値は端末内と Google Drive にのみ保存されます。
+          </p>
+        </div>
       </section>
 
       {termDialogOpen ? (

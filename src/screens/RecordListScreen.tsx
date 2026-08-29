@@ -29,6 +29,8 @@ import './records.css';
 
 interface RecordListScreenProps {
   onBack: () => void;
+  /** 絞り込んだ状態のまま明細出力へ進む */
+  onPrint: (termId: string, staffId: string) => void;
 }
 
 /** 労働時間の表示。小数と時分を併記して検算しやすくする */
@@ -41,7 +43,7 @@ function hoursLabel(minutes: number): string {
  * 過去の記録を確認し、行から修正する画面。
  * 締め日は設けず、集計は期 × スタッフ（その期の初出勤日〜最終出勤日）で行う。
  */
-export function RecordListScreen({ onBack }: RecordListScreenProps) {
+export function RecordListScreen({ onBack, onPrint }: RecordListScreenProps) {
   const todayDate = today();
   const [config, setConfig] = useState<Config>(DEFAULT_CONFIG);
   const [terms, setTerms] = useState<Term[]>([]);
@@ -259,6 +261,18 @@ export function RecordListScreen({ onBack }: RecordListScreenProps) {
           })
         )}
       </section>
+
+      <button
+        type="button"
+        className="btn btn--primary btn--block"
+        disabled={!termId || filtered.length === 0}
+        onClick={() => termId && onPrint(termId, staffId)}
+      >
+        この内容で明細を出力
+      </button>
+      <p className="note">
+        {`明細は期 × スタッフ 1 名を 1 枚として出します。全員を選んだ場合は 1 名ずつ改ページします。月の絞り込みは明細には反映されず、その期の全期間を出します。`}
+      </p>
 
       <p className="note">
         {`労働時間は 1 日の合計を ${config.rounding.unitMinutes} 分単位で${
