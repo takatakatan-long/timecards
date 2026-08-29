@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isUnresolved, rowStatusOf, unresolvedRecords } from './status';
+import { isUnresolved, resolveClockInTime, rowStatusOf, unresolvedRecords } from './status';
 import type { AttendanceRecord } from './types';
 
 function record(over: Partial<AttendanceRecord> = {}): AttendanceRecord {
@@ -78,5 +78,25 @@ describe('unresolvedRecords', () => {
       record({ id: 'c', date: '2026-08-20', kind: 'plan' }),
     ];
     expect(unresolvedRecords(records, '2026-08-10').map((r) => r.id)).toEqual(['a']);
+  });
+});
+
+describe('resolveClockInTime', () => {
+  it('押すのが遅れたら予定時刻を採る', () => {
+    // 作業に追われて押し忘れがちなので、遅い打刻で不利にならないようにする
+    expect(resolveClockInTime('08:00', '08:35')).toBe('08:00');
+  });
+
+  it('予定より早く来て打刻したら押した時刻を採る', () => {
+    // 早く働き始めた分を切り上げると、その分の賃金が支払われないため
+    expect(resolveClockInTime('08:00', '07:30')).toBe('07:30');
+  });
+
+  it('予定ちょうどなら予定時刻', () => {
+    expect(resolveClockInTime('08:00', '08:00')).toBe('08:00');
+  });
+
+  it('予定が無ければ押した時刻', () => {
+    expect(resolveClockInTime(null, '07:30')).toBe('07:30');
   });
 });

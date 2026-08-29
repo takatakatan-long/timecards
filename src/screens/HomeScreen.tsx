@@ -6,6 +6,7 @@ import { RecordDialog } from '../ui/RecordDialog';
 import type { RecordDialogValues } from '../ui/RecordDialog';
 import { useHomeData } from '../app/useHomeData';
 import {
+  DuplicateRecordError,
   clockIn,
   clockInWithoutPlan,
   clockOut,
@@ -107,17 +108,28 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
         workPlace: values.workPlace,
       });
     } else if (data.term) {
-      const created = await clockInWithoutPlan({
-        termId: data.term.id,
-        staffId: editing.staff.id,
-        date: data.todayDate,
-        startTime: values.startTime,
-      });
-      if (values.endTime || values.workPlace) {
-        await updateRecord(created.id, {
-          endTime: values.endTime,
-          workPlace: values.workPlace,
+      try {
+        const created = await clockInWithoutPlan({
+          termId: data.term.id,
+          staffId: editing.staff.id,
+          date: data.todayDate,
+          startTime: values.startTime,
         });
+        if (values.endTime || values.workPlace) {
+          await updateRecord(created.id, {
+            endTime: values.endTime,
+            workPlace: values.workPlace,
+          });
+        }
+      } catch (cause) {
+        // 別の端末やタブで先に打刻されていた場合。二重に並べず、読み直して知らせる
+        if (cause instanceof DuplicateRecordError) {
+          setEditing(null);
+          await refresh();
+          setToast({ message: `${editing.staff.name} は本日すでに記録があります` });
+          return;
+        }
+        throw cause;
       }
     }
     setEditing(null);

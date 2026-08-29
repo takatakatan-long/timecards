@@ -3,6 +3,7 @@ import { AppShell } from '../ui/AppShell';
 import { Icon } from '../ui/Icon';
 import { Modal } from '../ui/Modal';
 import {
+  DuplicateRecordError,
   copyPlans,
   createPlan,
   currentTerm,
@@ -44,6 +45,7 @@ export function PlanScreen({ onBack }: PlanScreenProps) {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [addOpen, setAddOpen] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
   const [copyOpen, setCopyOpen] = useState(false);
   const [editing, setEditing] = useState<AttendanceRecord | null>(null);
 
@@ -204,10 +206,26 @@ export function PlanScreen({ onBack }: PlanScreenProps) {
         <PlanDialog
           staff={staff}
           defaultDate={`${month}-01` <= todayDate && todayDate <= monthBounds(month).to ? todayDate : `${month}-01`}
-          onClose={() => setAddOpen(false)}
-          onSubmit={async (values) => {
-            await createPlan({ termId: term.id, ...values });
+          error={addError}
+          onClose={() => {
             setAddOpen(false);
+            setAddError(null);
+          }}
+          onSubmit={async (values) => {
+            try {
+              await createPlan({ termId: term.id, ...values });
+            } catch (cause) {
+              // 同じ人が同じ日に二重に並ぶと打刻も集計も破綻するため登録しない
+              if (cause instanceof DuplicateRecordError) {
+                setAddError(
+                  `${staffName(values.staffId)} は ${formatDateLabel(values.date)} にすでに登録があります。時刻を変えるならその予定を選んで変更してください。`,
+                );
+                return;
+              }
+              throw cause;
+            }
+            setAddOpen(false);
+            setAddError(null);
             await reload();
           }}
         />
@@ -250,11 +268,14 @@ export function PlanScreen({ onBack }: PlanScreenProps) {
 function PlanDialog({
   staff,
   defaultDate,
+  error,
   onClose,
   onSubmit,
 }: {
   staff: Staff[];
   defaultDate: IsoDate;
+  /** 登録できなかった理由。二重登録のときに出す */
+  error: string | null;
   onClose: () => void;
   onSubmit: (values: { staffId: string; date: IsoDate; startTime: string }) => void;
 }) {
@@ -297,6 +318,13 @@ function PlanDialog({
           onChange={(event) => setStartTime(event.target.value)}
         />
       </label>
+      {error ? (
+        <div className="alert">
+          <Icon name="alert" size={20} className="alert__icon" />
+          <div>{error}</div>
+        </div>
+      ) : null}
+
       <div className="modal__actions">
         <button type="button" className="btn btn--quiet" onClick={onClose}>
           キャンセル

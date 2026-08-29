@@ -15,7 +15,8 @@ import {
   putAll,
 } from './db';
 import { newId, nowStamp } from './id';
-import { toIsoDate, yearMonthOf } from '../domain/time';
+import { toHhMm, toIsoDate, yearMonthOf } from '../domain/time';
+import { resolveClockInTime } from '../domain/status';
 import { DEFAULT_CONFIG } from '../domain/types';
 import type { AttendanceRecord, Config, HhMm, IsoDate, Staff, Term } from '../domain/types';
 
@@ -163,13 +164,45 @@ export async function getRecord(id: string): Promise<AttendanceRecord | undefine
   return getByKey<AttendanceRecord>(STORE_RECORDS, id);
 }
 
-/** 出勤予定を 1 件登録する。入力項目は日付・スタッフ・出勤時刻の 3 つ */
+/**
+ * 同じ日の同じスタッフの記録を探す。
+ * 1 人が 1 日に持てる記録は 1 件だけという前提を守るために使う。
+ */
+export async function findRecordByDateAndStaff(
+  date: IsoDate,
+  staffId: string,
+): Promise<AttendanceRecord | undefined> {
+  const records = await getAllByIndex<AttendanceRecord>(STORE_RECORDS, 'date_staffId', [
+    date,
+    staffId,
+  ]);
+  return alive(records)[0];
+}
+
+/** 同じ日・同じスタッフの記録がすでにあるときに投げる */
+export class DuplicateRecordError extends Error {
+  /** すでに存在していた記録。呼び出し側が案内に使う */
+  existing: AttendanceRecord;
+
+  constructor(existing: AttendanceRecord) {
+    super('その日にはすでに記録があります');
+    this.name = 'DuplicateRecordError';
+    this.existing = existing;
+  }
+}
+
+/**
+ * 出勤予定を 1 件登録する。入力項目は日付・スタッフ・出勤時刻の 3 つ。
+ * 同じ人が同じ日に二重に並ぶと打刻も集計も破綻するため、既にあれば登録しない。
+ */
 export async function createPlan(input: {
   termId: string;
   staffId: string;
   date: IsoDate;
   startTime: HhMm;
 }): Promise<AttendanceRecord> {
+  const existing = await findRecordByDateAndStaff(input.date, input.staffId);
+  if (existing) throw new DuplicateRecordError(existing);
   const record: AttendanceRecord = {
     id: newId(),
     termId: input.termId,
@@ -206,19 +239,24 @@ export async function deleteRecord(id: string): Promise<void> {
 
 /**
  * 出勤の打刻。予定を実績に昇格させる。
- * 実勤務とずれた場合に備え startTime を渡せる（省略時は予定の時刻をそのまま使う）。
+ *
+ * 確定する時刻は予定と実際の早いほう（resolveClockInTime を参照）。
+ * startTime を渡した場合はその値をそのまま使う（修正画面からの手入力）。
  * このときの時給をレコードに焼き付け、後の時給改定が過去に遡らないようにする。
  */
 export async function clockIn(
   recordId: string,
-  options: { startTime?: HhMm } = {},
+  options: { startTime?: HhMm; stampedAt?: Date } = {},
 ): Promise<AttendanceRecord> {
   const record = await getRecord(recordId);
   if (!record) throw new Error(`記録が見つかりません: ${recordId}`);
   const staff = await getByKey<Staff>(STORE_STAFF, record.staffId);
+  const startTime =
+    options.startTime ??
+    resolveClockInTime(record.startTime, toHhMm(options.stampedAt ?? new Date()));
   return updateRecord(recordId, {
     kind: 'actual',
-    startTime: options.startTime ?? record.startTime,
+    startTime,
     hourlyWage: record.hourlyWage ?? staff?.hourlyWage ?? null,
   });
 }
@@ -230,6 +268,8 @@ export async function clockInWithoutPlan(input: {
   date: IsoDate;
   startTime: HhMm;
 }): Promise<AttendanceRecord> {
+  const existing = await findRecordByDateAndStaff(input.date, input.staffId);
+  if (existing) throw new DuplicateRecordError(existing);
   const staff = await getByKey<Staff>(STORE_STAFF, input.staffId);
   const record: AttendanceRecord = {
     id: newId(),

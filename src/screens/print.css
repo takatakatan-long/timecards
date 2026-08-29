@@ -140,3 +140,28 @@
   size: A4;
   margin: 15mm;
 }
+
+/*
+ * 印刷はプリンターの選択が要るので PC からに限定する。
+ * スマホ幅では印刷ボタンを出さず、代わりに理由を短く添える。
+ */
+.print-toolbar__hint {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--color-text-sub);
+  white-space: nowrap;
+}
+
+.print-toolbar__print {
+  display: none;
+}
+
+@media (min-width: 700px) {
+  .print-toolbar__print {
+    display: inline-flex;
+  }
+
+  .print-toolbar__hint {
+    display: none;
+  }
+}

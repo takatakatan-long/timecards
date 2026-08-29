@@ -76,9 +76,18 @@ export function PrintScreen({ termId, staffId, onBack }: PrintScreenProps) {
         <div className="print-toolbar__title">
           明細 ／ {term?.name ?? ''} ／ {statements.length} 名
         </div>
-        <button type="button" className="btn btn--primary" onClick={() => window.print()}>
+        {/*
+          スマホでは印刷せず、内容の確認だけができればよい。
+          どちらを見せるかは CSS の幅指定で決める（画面を回しても確実に切り替わるため）。
+        */}
+        <button
+          type="button"
+          className="btn btn--primary print-toolbar__print"
+          onClick={() => window.print()}
+        >
           印刷
         </button>
+        <span className="print-toolbar__hint">印刷は PC から</span>
       </div>
 
       {statements.length === 0 ? (
