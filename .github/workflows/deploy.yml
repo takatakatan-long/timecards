@@ -1,0 +1,53 @@
+# main へ push するたびに、ビルドして GitHub Pages へ公開する。
+# 手作業での配置は行わない（手元のビルド結果と公開物がずれないようにするため）。
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # 画面から手動で流すこともできるようにしておく
+  workflow_dispatch:
+
+# Pages への書き込みに必要な権限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 公開は 1 つずつ。走行中のものは終わらせてから次を流す
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # package-lock.json のとおりに入れる（手元と同じ版で組むため）
+      - run: npm ci
+
+      # 公開前に型・規約・テストを通す。落ちたら公開しない
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
