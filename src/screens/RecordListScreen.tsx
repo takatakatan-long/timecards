@@ -102,6 +102,13 @@ export function RecordListScreen({ onBack, onPrint }: RecordListScreenProps) {
 
   const summary = summarize(filtered, config.rounding);
   const unresolvedCount = filtered.filter((record) => isUnresolved(record, todayDate)).length;
+  // 実績なのに時給が焼き付いていない記録。金額が 0 として集計されてしまう
+  const missingWageCount = filtered.filter(
+    (record) =>
+      record.kind === 'actual' &&
+      record.hourlyWage === null &&
+      roundedWorkMinutes(record, config.rounding) !== null,
+  ).length;
 
   // 雇用期間はスタッフマスタに持たず、期の中の実記録から導出する
   const workedDates = filtered
@@ -210,6 +217,16 @@ export function RecordListScreen({ onBack, onPrint }: RecordListScreenProps) {
             <dd className="summary__amount">{summary.amount.toLocaleString()} 円</dd>
           </div>
         </dl>
+        {missingWageCount > 0 ? (
+          <div className="alert" style={{ marginTop: 'var(--space-3)' }}>
+            <Icon name="alert" size={20} className="alert__icon" />
+            <div>
+              時給が記録されていない記録が {missingWageCount} 件あります。
+              その分の金額は支給額に入っていません。行を開いて保存し直すと計算されます。
+            </div>
+          </div>
+        ) : null}
+
         {unresolvedCount > 0 ? (
           <div className="alert" style={{ marginTop: 'var(--space-3)' }}>
             <Icon name="alert" size={20} className="alert__icon" />
@@ -252,8 +269,20 @@ export function RecordListScreen({ onBack, onPrint }: RecordListScreenProps) {
                   <div className="record-row__hours">
                     {minutes === null ? '—' : `${minutesToHours(minutes).toFixed(2)} h`}
                   </div>
-                  <div className="record-row__wage">
-                    {wage === null ? '' : `${wage.toLocaleString()} 円`}
+                  <div
+                    className={`record-row__wage${
+                      wage === null && minutes !== null ? ' is-missing' : ''
+                    }`}
+                  >
+                    {/*
+                      労働時間は出るのに金額が出ない状態を、空欄のままにしない。
+                      時給が焼き付いていない記録は集計にも入らないので、気づけるようにする。
+                    */}
+                    {wage !== null
+                      ? `${wage.toLocaleString()} 円`
+                      : minutes !== null
+                        ? '時給未記録'
+                        : ''}
                   </div>
                 </div>
               </button>

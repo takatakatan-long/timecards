@@ -236,6 +236,14 @@ export async function updateRecord(
   const current = await getRecord(id);
   if (!current) throw new Error(`記録が見つかりません: ${id}`);
   const next: AttendanceRecord = { ...current, ...patch, id, updatedAt: nowStamp() };
+  // 実績になった時点の時給をレコードへ焼き付ける。
+  // 打刻ボタン以外の経路（修正画面で予定を実績へ直す、打刻漏れを後から埋める）でも
+  // 必ず通るよう、保存の直前という 1 箇所にまとめている。
+  // ここが抜けると労働時間だけ集計され、金額が 0 のまま静かにずれる。
+  if (next.kind === 'actual' && next.hourlyWage === null) {
+    const staff = await getByKey<Staff>(STORE_STAFF, next.staffId);
+    next.hourlyWage = staff?.hourlyWage ?? null;
+  }
   await put(STORE_RECORDS, next);
   return next;
 }

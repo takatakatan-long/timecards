@@ -94,3 +94,9 @@
   border-top: 1px solid var(--color-border);
   font-weight: 500;
 }
+
+/* 時給が記録されていない行。空欄のままにせず、気づける色で出す */
+.record-row__wage.is-missing {
+  color: var(--color-accent);
+  font-weight: 500;
+}
