@@ -99,8 +99,25 @@ export async function getTerm(id: string): Promise<Term | undefined> {
   return term && !term.deleted ? term : undefined;
 }
 
-/** 新しい期を作成し、以後の記録の所属先にする。名称はユーザーの手入力を受け取る */
-export async function createTerm(name: string, startDate: IsoDate): Promise<Term> {
+/** 開始日以降に残る他の期の予定をどう扱うか */
+export type StrandedPlanHandling =
+  /** 新しい期へ移す。予定はそのまま使える */
+  | 'move'
+  /** 削除する */
+  | 'delete'
+  /** 前の期に残したままにする */
+  | 'keep';
+
+/**
+ * 新しい期を作成し、以後の記録の所属先にする。名称はユーザーの手入力を受け取る。
+ * 開始日以降に他の期の予定が残っている場合の扱いを handling で指定する。
+ */
+export async function createTerm(
+  name: string,
+  startDate: IsoDate,
+  handling: StrandedPlanHandling = 'keep',
+): Promise<Term> {
+  const stranded = handling === 'keep' ? [] : await plansStrandedBy(startDate);
   const term: Term = {
     id: newId(),
     name,
@@ -110,6 +127,10 @@ export async function createTerm(name: string, startDate: IsoDate): Promise<Term
     deleted: false,
   };
   await put(STORE_TERMS, term);
+  for (const record of stranded) {
+    if (handling === 'move') await updateRecord(record.id, { termId: term.id });
+    else await deleteRecord(record.id);
+  }
   await patchConfig({ currentTermId: term.id });
   return term;
 }
@@ -175,16 +196,37 @@ export async function getRecord(id: string): Promise<AttendanceRecord | undefine
 /**
  * 同じ日の同じスタッフの記録を探す。
  * 1 人が 1 日に持てる記録は 1 件だけという前提を守るために使う。
+ *
+ * 判定は期の内側だけで行う。集計も明細も期の内側で完結する以上、
+ * 別の期の記録は「その期の中では存在しない」扱いが正しい。
+ * 期をまたいで弾くと、前の期に残った予定が新しい期の記録を妨げ、
+ * しかも画面には出ていないため理由が分からなくなる。
  */
 export async function findRecordByDateAndStaff(
   date: IsoDate,
   staffId: string,
+  termId: string,
 ): Promise<AttendanceRecord | undefined> {
   const records = await getAllByIndex<AttendanceRecord>(STORE_RECORDS, 'date_staffId', [
     date,
     staffId,
   ]);
-  return alive(records)[0];
+  return alive(records).find((record) => record.termId === termId);
+}
+
+/**
+ * 新しい期の開始日以降に、他の期の予定が残っていないか調べる。
+ *
+ * 期を作ると日常の画面は新しい期だけを映すので、こうした予定は画面から消えるが
+ * データとしては生き続ける。放っておくと打刻の邪魔をしたまま理由が分からなくなるため、
+ * 期を作る前に気づけるようにする。
+ */
+export async function plansStrandedBy(startDate: IsoDate): Promise<AttendanceRecord[]> {
+  const range = IDBKeyRange.bound(startDate, '9999-12-31');
+  const records = await getAllByIndex<AttendanceRecord>(STORE_RECORDS, 'date', range);
+  return alive(records)
+    .filter((record) => record.kind === 'plan')
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 /** 同じ日・同じスタッフの記録がすでにあるときに投げる */
@@ -209,7 +251,7 @@ export async function createPlan(input: {
   date: IsoDate;
   startTime: HhMm;
 }): Promise<AttendanceRecord> {
-  const existing = await findRecordByDateAndStaff(input.date, input.staffId);
+  const existing = await findRecordByDateAndStaff(input.date, input.staffId, input.termId);
   if (existing) throw new DuplicateRecordError(existing);
   const record: AttendanceRecord = {
     id: newId(),
@@ -284,7 +326,7 @@ export async function clockInWithoutPlan(input: {
   date: IsoDate;
   startTime: HhMm;
 }): Promise<AttendanceRecord> {
-  const existing = await findRecordByDateAndStaff(input.date, input.staffId);
+  const existing = await findRecordByDateAndStaff(input.date, input.staffId, input.termId);
   if (existing) throw new DuplicateRecordError(existing);
   const staff = await getByKey<Staff>(STORE_STAFF, input.staffId);
   const record: AttendanceRecord = {

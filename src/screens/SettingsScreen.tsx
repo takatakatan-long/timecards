@@ -11,12 +11,14 @@ import {
   listStaff,
   loadConfig,
   patchConfig,
+  plansStrandedBy,
   updateStaff,
 } from '../data/repository';
+import type { StrandedPlanHandling } from '../data/repository';
 import { unresolvedRecords } from '../domain/status';
 import { DataSection } from './settings/DataSection';
 import { WageSection } from './settings/WageSection';
-import { today } from '../domain/time';
+import { formatDateLabel, today } from '../domain/time';
 import {
   connect as connectDrive,
   disconnect as disconnectDrive,
@@ -24,7 +26,7 @@ import {
   resolveDriveStatus,
 } from '../data/drive/service';
 import { DEFAULT_CONFIG } from '../domain/types';
-import type { Config, DriveStatus, Staff, Term } from '../domain/types';
+import type { AttendanceRecord, Config, DriveStatus, Staff, Term } from '../domain/types';
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -307,6 +309,19 @@ function TermDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
   // 開始日を元にした候補を初期値に置くが、必ず編集できるようにする
   const [name, setName] = useState(`${Number(startDate.slice(0, 4))}年 ${Number(startDate.slice(5, 7))}月〜`);
   const [start, setStart] = useState(startDate);
+  const [stranded, setStranded] = useState<AttendanceRecord[]>([]);
+  const [handling, setHandling] = useState<StrandedPlanHandling>('move');
+  const [staffNames, setStaffNames] = useState<Map<string, string>>(new Map());
+
+  // 開始日以降に残る予定を調べる。期を作ると画面から見えなくなるので、作る前に知らせる
+  useEffect(() => {
+    void (async () => {
+      const [records, members] = await Promise.all([plansStrandedBy(start), listStaff(true)]);
+      // oxlint-disable-next-line react/set-state-in-effect
+      setStranded(records);
+      setStaffNames(new Map(members.map((member) => [member.id, member.name])));
+    })();
+  }, [start]);
 
   return (
     <Modal title="新しい期を作成" onClose={onClose}>
@@ -328,6 +343,55 @@ function TermDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
           onChange={(event) => setStart(event.target.value)}
         />
       </label>
+
+      {stranded.length > 0 ? (
+        <>
+          <div className="alert" style={{ marginBottom: 'var(--space-3)' }}>
+            <Icon name="alert" size={20} className="alert__icon" />
+            <div>
+              今の期に、{formatDateLabel(start)} 以降の予定が {stranded.length} 件あります。
+              このまま期を作ると画面から見えなくなりますが、データは残り続け、
+              同じ日に記録しようとすると理由の分からないまま弾かれます。
+            </div>
+          </div>
+
+          <ul className="stranded-list">
+            {stranded.slice(0, 5).map((record) => (
+              <li key={record.id}>
+                {formatDateLabel(record.date)}
+                {'　'}
+                {staffNames.get(record.staffId) ?? '（不明）'}
+                {'　'}
+                {record.startTime}
+              </li>
+            ))}
+            {stranded.length > 5 ? <li>ほか {stranded.length - 5} 件</li> : null}
+          </ul>
+
+          <div className="field">
+            <span className="field__label">この予定をどうしますか</span>
+            {(
+              [
+                ['move', '新しい期へ引き継ぐ'],
+                ['delete', '削除する'],
+                ['keep', '前の期に残す'],
+              ] as [StrandedPlanHandling, string][]
+            ).map(([value, label]) => (
+              <label className="field field--inline" key={value}>
+                <input
+                  type="radio"
+                  name="stranded"
+                  value={value}
+                  checked={handling === value}
+                  onChange={() => setHandling(value)}
+                />
+                <span className="field__label">{label}</span>
+              </label>
+            ))}
+          </div>
+        </>
+      ) : null}
+
       <div className="modal__actions">
         <button type="button" className="btn btn--quiet" onClick={onClose}>
           キャンセル
@@ -336,7 +400,7 @@ function TermDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () => 
           type="button"
           className="btn btn--primary"
           disabled={name.trim() === ''}
-          onClick={() => void createTerm(name.trim(), start).then(onSaved)}
+          onClick={() => void createTerm(name.trim(), start, handling).then(onSaved)}
         >
           作成
         </button>
