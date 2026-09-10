@@ -45,21 +45,20 @@ export function unresolvedRecords(
 /**
  * 出勤打刻で確定させる時刻を決める。
  *
- * 予定時刻をそのまま使うのが基本。作業に追われてボタンを押すのが遅れがちで、
- * 押した時刻をそのまま採ると実際より遅い出勤として記録されてしまうため。
+ * **予定があれば、押した時刻に関わらず予定時刻で確定する。**
  *
- * ただし予定より早く来て打刻した場合は、押した時刻を採る。
- * 早く働き始めた分を予定時刻に切り上げてしまうと、その分の賃金が支払われないため。
+ * 現場では早めに集まって準備や段取りをしてから、予定の時刻に仕事を始める。
+ * そのためボタンを押した実時刻で記録すると、結局あとから予定時刻へ直すことになり、
+ * 毎回の手直しが発生していた。それなら最初から予定時刻で確定させたほうが早い。
  *
- * つまり「予定と実際の早いほう」を採用する。
+ * 予定より早く働き始めた日は、記録を開いて出勤時刻を手で入力する
+ * （例外のほうを直す形にして、日常の手間を減らしている）。
+ *
+ * 予定が無い日は押した時刻を使う。基準になる予定が存在しないため。
  */
 export function resolveClockInTime(
   planTime: HhMm | null,
   stampedTime: HhMm,
 ): HhMm {
-  const plan = parseHhMm(planTime);
-  const stamped = parseHhMm(stampedTime);
-  if (plan === null) return stampedTime;
-  if (stamped === null) return planTime as HhMm;
-  return stamped < plan ? stampedTime : (planTime as HhMm);
+  return parseHhMm(planTime) === null ? stampedTime : (planTime as HhMm);
 }
