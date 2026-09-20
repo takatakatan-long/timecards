@@ -16,7 +16,8 @@ import {
   workPlaceSuggestions,
 } from '../data/repository';
 import { rowStatusOf } from '../domain/status';
-import { formatDateLabel, formatTimeLabel, toHhMm } from '../domain/time';
+import { ceilHhMm, formatDateLabel, formatTimeLabel, toHhMm } from '../domain/time';
+import { DEFAULT_CONFIG } from '../domain/types';
 import type { AttendanceRecord, Staff } from '../domain/types';
 import type { Screen } from '../App';
 
@@ -88,9 +89,13 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
     });
   };
 
-  /** 退勤の打刻。打刻した時点の実時刻を初期値にする */
+  /**
+   * 退勤の打刻。打刻した時点の実時刻を、設定の単位（既定 15 分）で切り上げて初期値にする。
+   * 結局あとから 15 分刻みに直していたため。手入力で分単位に修正できるのは変わらない。
+   */
   const handleClockOut = async (staff: Staff, record: AttendanceRecord) => {
-    const endTime = toHhMm(new Date());
+    const unit = data.config?.rounding.unitMinutes ?? DEFAULT_CONFIG.rounding.unitMinutes;
+    const endTime = ceilHhMm(toHhMm(new Date()), unit);
     const saved = await clockOut(record.id, endTime);
     await refresh();
     setToast({

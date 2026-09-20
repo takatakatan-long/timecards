@@ -67,6 +67,19 @@ export function toHhMm(date: Date): HhMm {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
+/**
+ * 時刻を単位（分）の切り上げに揃える。退勤打刻の初期値に使う。
+ *
+ * 現場では退勤時刻を結局 15 分刻みに直していたため、最初からその形で入れる。
+ * 方向は設定に関わらず切り上げ（働いた側が損をしない側に倒す）。
+ * ちょうど単位の上にあればそのまま。24:00 を超えたら翌日の 0:00 として折り返す。
+ */
+export function ceilHhMm(value: HhMm, unitMinutes: number): HhMm {
+  const minutes = parseHhMm(value);
+  if (minutes === null || unitMinutes <= 1) return value;
+  return formatHhMm(Math.ceil(minutes / unitMinutes) * unitMinutes);
+}
+
 /** 'YYYY-MM-DD' から 'YYYY-MM' を取り出す。レコードの保存先ファイルの判定に使う */
 export function yearMonthOf(date: IsoDate): YearMonth {
   return date.slice(0, 7);

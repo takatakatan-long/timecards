@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   calendarGrid,
+  ceilHhMm,
   dateRange,
   daysBetween,
   formatDuration,
@@ -131,5 +132,27 @@ describe('calendarGrid', () => {
     const days = calendarGrid('2026-08').filter((cell) => cell !== null);
     expect(days).toHaveLength(31);
     expect(days.at(-1)).toBe('2026-08-31');
+  });
+});
+
+describe('ceilHhMm', () => {
+  it('単位の切り上げに揃える', () => {
+    expect(ceilHhMm('16:52', 15)).toBe('17:00');
+    expect(ceilHhMm('16:46', 15)).toBe('17:00');
+    expect(ceilHhMm('16:31', 15)).toBe('16:45');
+  });
+
+  it('ちょうど単位の上ならそのまま', () => {
+    expect(ceilHhMm('16:45', 15)).toBe('16:45');
+    expect(ceilHhMm('17:00', 15)).toBe('17:00');
+  });
+
+  it('単位が変われば追従する', () => {
+    expect(ceilHhMm('16:31', 30)).toBe('17:00');
+    expect(ceilHhMm('16:31', 1)).toBe('16:31');
+  });
+
+  it('24:00 を超えたら翌日の 0:00 として折り返す', () => {
+    expect(ceilHhMm('23:50', 15)).toBe('00:00');
   });
 });
