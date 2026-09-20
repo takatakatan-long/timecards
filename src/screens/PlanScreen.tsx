@@ -104,7 +104,29 @@ export function PlanScreen({ onBack }: PlanScreenProps) {
         <p className="empty">先に設定で期を作成してください。</p>
       ) : (
         <>
-          {/* スマホ: 日付順のリスト。予定のない日は行ごと出さない */}
+          {/* 追加は最も頻繁な操作なので、一覧をスクロールせずに押せる位置に置く */}
+          <div className="plan-actions">
+            <button
+              type="button"
+              className="btn btn--primary btn--block"
+              disabled={staff.length === 0}
+              onClick={() => setAddOpen(true)}
+            >
+              予定を追加
+            </button>
+            <button
+              type="button"
+              className="btn btn--quiet btn--block"
+              onClick={() => setCopyOpen(true)}
+            >
+              予定をコピー
+            </button>
+          </div>
+          {staff.length === 0 ? (
+            <p className="note">スタッフが登録されていません。設定から登録してください。</p>
+          ) : null}
+
+          {/* スマホ: 新しい日付が上のリスト。予定のない日は行ごと出さない */}
           <section className="plan-list">
             {grouped.length === 0 ? (
               <p className="empty">この月の予定はまだありません</p>
@@ -179,26 +201,6 @@ export function PlanScreen({ onBack }: PlanScreenProps) {
             </div>
           </section>
 
-          <div className="plan-actions">
-            <button
-              type="button"
-              className="btn btn--primary btn--block"
-              disabled={staff.length === 0}
-              onClick={() => setAddOpen(true)}
-            >
-              予定を追加
-            </button>
-            <button
-              type="button"
-              className="btn btn--quiet btn--block"
-              onClick={() => setCopyOpen(true)}
-            >
-              予定をコピー
-            </button>
-          </div>
-          {staff.length === 0 ? (
-            <p className="note">スタッフが登録されていません。設定から登録してください。</p>
-          ) : null}
         </>
       )}
 

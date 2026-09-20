@@ -41,15 +41,23 @@ describe('planStateOf', () => {
 });
 
 describe('groupByDate', () => {
-  it('日付ごとにまとめて日付順に並べる', () => {
-    const grouped = groupByDate([
-      record({ id: 'b', date: '2026-08-12' }),
-      record({ id: 'a', date: '2026-08-10' }),
-      record({ id: 'c', date: '2026-08-10', staffId: 's2' }),
-    ]);
-    expect(grouped.map(([date, items]) => [date, items.length])).toEqual([
-      ['2026-08-10', 2],
+  const records = [
+    record({ id: 'b', date: '2026-08-12' }),
+    record({ id: 'a', date: '2026-08-10' }),
+    record({ id: 'c', date: '2026-08-10', staffId: 's2' }),
+  ];
+
+  it('日付ごとにまとめ、既定では新しい日付を上にする', () => {
+    expect(groupByDate(records).map(([date, items]) => [date, items.length])).toEqual([
       ['2026-08-12', 1],
+      ['2026-08-10', 2],
+    ]);
+  });
+
+  it('古い順にも並べられる', () => {
+    expect(groupByDate(records, 'oldest-first').map(([date]) => date)).toEqual([
+      '2026-08-10',
+      '2026-08-12',
     ]);
   });
 });

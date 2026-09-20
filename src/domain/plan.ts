@@ -20,15 +20,22 @@ export const PLAN_STATE_LABEL: Record<PlanState, string> = {
   missed: '未確定',
 };
 
-/** 日付ごとにまとめる。予定のない日は現れないので、そのまま「予定のある日だけ」の並びになる */
-export function groupByDate(records: AttendanceRecord[]): [IsoDate, AttendanceRecord[]][] {
+/**
+ * 日付ごとにまとめる。予定のない日は現れないので、そのまま「予定のある日だけ」の並びになる。
+ * 既定は新しい日付が上。直近の予定を確認する使い方が多く、古い日付を先に見ることはほぼないため。
+ */
+export function groupByDate(
+  records: AttendanceRecord[],
+  order: 'newest-first' | 'oldest-first' = 'newest-first',
+): [IsoDate, AttendanceRecord[]][] {
   const groups = new Map<IsoDate, AttendanceRecord[]>();
   for (const record of records) {
     const bucket = groups.get(record.date);
     if (bucket) bucket.push(record);
     else groups.set(record.date, [record]);
   }
-  return [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  const sign = order === 'newest-first' ? -1 : 1;
+  return [...groups.entries()].sort((a, b) => sign * a[0].localeCompare(b[0]));
 }
 
 /**
