@@ -9,6 +9,7 @@ import {
   serializeBackup,
 } from '../../data/backup';
 import type { BackupFile } from '../../data/backup';
+import { detectPlatform, saveBackupFile, saveMessage } from '../../data/backupSave';
 import { today } from '../../domain/time';
 
 interface DataSectionProps {
@@ -29,23 +30,41 @@ export function DataSection({ onRestored }: DataSectionProps) {
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState<BackupFile | null>(null);
 
+  /** 共有画面を開けなかったときに、もう一度押してもらうための書き出し済みファイル */
+  const [waiting, setWaiting] = useState<File | null>(null);
+
+  /** ファイルを保存し、結果を案内に出す。呼ぶ前に時間のかかる処理を挟まないこと */
+  const save = async (file: File) => {
+    const result = await saveBackupFile(file);
+    const platform = detectPlatform(navigator.userAgent, navigator.maxTouchPoints);
+    setMessage(saveMessage(result, file.name, platform));
+    setWaiting(result === 'blocked' ? file : null);
+  };
+
   const handleExport = async () => {
     setBusy(true);
     setMessage(null);
+    setWaiting(null);
     try {
       const backup = await exportBackup();
-      const blob = new Blob([serializeBackup(backup)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `出勤簿バックアップ-${today()}.json`;
-      link.click();
-      URL.revokeObjectURL(url);
-      setMessage('バックアップを書き出しました');
+      const file = new File([serializeBackup(backup)], `出勤簿バックアップ-${today()}.json`, {
+        type: 'application/json',
+      });
+      await save(file);
     } catch (cause) {
       setMessage(cause instanceof Error ? cause.message : '書き出しに失敗しました');
     } finally {
       setBusy(false);
+    }
+  };
+
+  /** 書き出し済みのファイルを、ボタンを押した直後に共有する */
+  const handleRetry = async () => {
+    if (!waiting) return;
+    try {
+      await save(waiting);
+    } catch (cause) {
+      setMessage(cause instanceof Error ? cause.message : '保存に失敗しました');
     }
   };
 
@@ -109,12 +128,23 @@ export function DataSection({ onRestored }: DataSectionProps) {
         />
 
         {message ? <p className="note">{message}</p> : null}
+        {waiting ? (
+          <button
+            type="button"
+            className="btn btn--accent btn--block"
+            style={{ marginTop: 'var(--space-2)' }}
+            onClick={() => void handleRetry()}
+          >
+            保存先を選ぶ
+          </button>
+        ) : null}
 
         <p className="note">
           全データを 1 つの JSON として書き出します。
           Google Drive の同期は 2 台を揃える仕組みであってバックアップではありません
           （片方で消した記録は、同期するともう片方からも消えます）。
           区切りのよいときに書き出して、端末の外に置いておいてください。
+          書き出すと保存先を選ぶ画面が開きます（開けない環境ではダウンロードされます）。
         </p>
       </div>
 
